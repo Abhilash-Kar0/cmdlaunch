@@ -4,8 +4,10 @@ from tkinter import *
 from tkinter.ttk import *
 import pprint
 
+
 import tkinter as tk
 from subprocess import call
+from PIL import Image 
 # aliasing
 ask = input
 pp = pprint.PrettyPrinter(indent=4)
@@ -26,6 +28,17 @@ class Icon:
 
 root = Tk()
 
+def launch_window(command):
+    if sys.platform.startswith('linux'):
+        commands = 'gnome-terminal --command \"bash -c \\\"'+ command+'; exec bash\\\"\"'
+    elif sys.platform.startswith('win'):
+        commands = 'start cmd.exe @cmd /k'+ command
+    elif sys.platform.startswith('darwin'):
+        #To be implemented for Mac 
+        pass        
+    #print(commands)
+    call(commands, shell = True)
+
 
 class CmdGUI:
     def __init__(self, master):
@@ -40,6 +53,14 @@ class CmdGUI:
         for i, program in enumerate(self.programs):
             jsonpath = 'programs/{}/cmdlaunch.json'.format(program)
             info = jload(open(jsonpath))
+            #resize the images for Once and ever
+            im = Image.open('icons/'+info['icon'])
+            if im.size != (300,240):
+                im = im.resize((300,240))
+                im.save('icons/'+info['icon'])
+                print("Images resized to (300,240)")
+            im.close()
+
             photo = PhotoImage(file = 'icons/'+info['icon']) 
             photoimage = photo.subsample(3, 3) 
             self.icons.append(Icon(photoimage, info, program))
@@ -59,10 +80,9 @@ class CmdGUI:
     def button_exec(self, icon):
         os.chdir('programs/'+icon.program)
         for command in icon.info['commands']:
-            command = 'gnome-terminal --command \"bash -c \\\"'+ command+'; exec bash\\\"\"'
-            #print(command)
-            call(command, shell = True)
-        
+            launch_window(command)
+    
+
 #        print(f'''
 #            The following button with info was clicked:
 #            program:{icon.program}
